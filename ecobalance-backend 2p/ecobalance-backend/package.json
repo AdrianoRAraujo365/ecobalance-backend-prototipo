@@ -1,0 +1,28 @@
+{
+  "name": "ecobalance-ledger-backend",
+  "version": "2.0.26",
+  "description": "EcoBalance Ledger - API REST (Node.js/Express/Sequelize/MySQL) com motor de Leontief (Python/NumPy via child_process) e ledger blockchain SHA-256. Arquitetura MVC conforme apostila Sistema de Gerenciamento de Biblioteca.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "seed": "node seeders/seed.js",
+    "test:leontief": "node scripts/leontief_engine.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "sequelize": "^6.37.3",
+    "mysql2": "^3.10.0",
+    "body-parser": "^1.20.2",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "dotenv": "^16.4.5",
+    "cors": "^2.8.5",
+    "express-validator": "^7.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  },
+  "author": "Adriano Rodrigues de Araujo, Gabriel Gomide, Pedro Henrique da Silva (Fatec Zona Leste - CPS)",
+  "license": "MIT"
+}
