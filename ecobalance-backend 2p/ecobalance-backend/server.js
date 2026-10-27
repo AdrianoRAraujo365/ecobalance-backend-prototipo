@@ -8,12 +8,35 @@ const routes = require('./routes');
 const app = express();
 const PORTA = process.env.PORT || 3000;
 
-// ---------- Middlewares (ordem importa — Aula 02 da apostila) ----------
-app.use(cors({ origin: process.env.APP_ORIGIN || '*' })); // CORS para o app React Native / React web
-app.use(bodyParser.json({ limit: '2mb' }));               // interpreta JSON no corpo (equivalente a express.json())
-app.use(bodyParser.urlencoded({ extended: true }));       // formulários
+// ---------- Configuração Robusta de CORS ----------
+// Suporta múltiplas origens separadas por vírgula em APP_ORIGIN
+const origensPermitidas = process.env.APP_ORIGIN
+  ? process.env.APP_ORIGIN.split(',').map((origem) => origem.trim())
+  : ['http://localhost:8080', 'http://127.0.0.1:8080', 'http://localhost:3000'];
 
-// Log simples de requisições (middleware didático da Aula 02)
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Permite requisições sem origin (ex.: curl, mobile apps ou healthchecks do Render)
+      if (!origin || origensPermitidas.includes('*') || origensPermitidas.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`Bloqueado por CORS: Origem ${origin} não autorizada.`));
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  })
+);
+
+// Responde imediatamente às requisições preflight OPTIONS
+app.options('*', cors());
+
+// ---------- Middlewares ----------
+app.use(bodyParser.json({ limit: '2mb' }));
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Log de requisições
 app.use((req, res, next) => {
   const agora = new Date().toLocaleTimeString('pt-BR');
   console.log(`[${agora}] ${req.method} ${req.url}`);
@@ -28,10 +51,11 @@ app.use((req, res) => res.status(404).json({ erro: 'Rota não encontrada' }));
 
 // ---------- Sincronização do banco e subida do servidor ----------
 sequelize
-  .sync({ alter: true }) // cria/atualiza tabelas a partir dos Models (didático; em produção usar migrations)
-  .then(() => console.log('✔ Tabelas sincronizadas com o MySQL'))
+  .sync({ alter: process.env.NODE_ENV !== 'production' }) // Evita alterações destrutivas em produção
+  .then(() => console.log('✔ Banco de dados sincronizado com sucesso'))
   .catch((erro) => console.error('✖ Erro ao sincronizar:', erro.message));
 
-app.listen(PORTA, () => {
-  console.log(`Servidor EcoBalance Ledger rodando em http://localhost:${PORTA}/api`);
+// Obrigatório '0.0.0.0' para o Render rotear requisições externas para o container
+app.listen(PORTA, '0.0.0.0', () => {
+  console.log(`Servidor EcoBalance Ledger rodando na porta ${PORTA}`);
 });
