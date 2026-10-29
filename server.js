@@ -22,17 +22,14 @@ const allowNullOrigin =
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Permite chamadas sem cabeçalho Origin.
     if (!origin) {
       return callback(null, true);
     }
 
-    // Permite as origens cadastradas no APP_ORIGIN.
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
-    // Permissão opcional para testes locais com file://.
     if (origin === 'null' && allowNullOrigin) {
       return callback(null, true);
     }
@@ -46,41 +43,16 @@ const corsOptions = {
     );
   },
   methods: [
-    'GET',
-    'POST',
-    'PUT',
-    'PATCH',
-    'DELETE',
-    'OPTIONS'
+    'GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'
   ],
   allowedHeaders: [
-    'Content-Type',
-    'Authorization'
-  ]
+    'Content-Type', 'Authorization'
+  ],
+  credentials: true
 };
 
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '2mb' }));
-
-// Suporta múltiplas origens separadas por vírgula em APP_ORIGIN
-const origensPermitidas = process.env.APP_ORIGIN
-  ? process.env.APP_ORIGIN.split(',').map((origem) => origem.trim())
-  : ['http://localhost:8080', 'http://127.0.0.1:8080', 'http://localhost:3000'];
-
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Permite requisições sem origin (ex.: curl, mobile apps ou healthchecks do Render)
-      if (!origin || origensPermitidas.includes('*') || origensPermitidas.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(new Error(`Bloqueado por CORS: Origem ${origin} não autorizada.`));
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-  })
-);
 
 // Responde imediatamente às requisições preflight OPTIONS
 app.options('*', cors());
