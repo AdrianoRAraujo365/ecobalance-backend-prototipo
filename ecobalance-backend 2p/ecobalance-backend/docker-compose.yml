@@ -1,0 +1,41 @@
+version: "3.9"
+# EcoBalance Ledger — microserviços (artigo: Node.js + MySQL 8.0 + motor Python)
+services:
+  db:
+    image: mysql:8.0
+    container_name: ecobalance-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root123}
+      MYSQL_DATABASE: ${DB_NAME:-ecobalance_db}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./config/database.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    container_name: ecobalance-api
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:-root123}
+      DB_NAME: ${DB_NAME:-ecobalance_db}
+      JWT_SECRET: ${JWT_SECRET:-troque-em-producao}
+    ports:
+      - "3000:3000"
+
+volumes:
+  db_data:
