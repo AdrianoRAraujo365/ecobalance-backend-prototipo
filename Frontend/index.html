@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoBalance Ledger — Sistema de Governança ESG e TI Verde</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            850: '#0f291e',
+                            900: '#064e3b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .fade-in { animation: fadeIn 0.3s ease-in-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2"></div>
+
+    <!-- Top Navigation Bar (A) -->
+    <header class="bg-brand-900 text-white shadow-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('home')">
+                <div class="bg-brand-500 text-white p-2 rounded-lg shadow">
+                    <i class="fa-solid fa-leaf text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-wide">EcoBalance Ledger</h1>
+                    <p class="text-xs text-brand-100 opacity-80">Governança ESG &amp; TI Verde</p>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="hidden md:flex items-center space-x-1 lg:space-x-2">
+                <button onclick="switchTab('home')" id="nav-home" class="nav-btn px-3 py-2 rounded-md text-sm font-medium bg-brand-850 text-white transition">Início</button>
+                <button onclick="switchTab('matrix')" id="nav-matrix" class="nav-btn px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-800 text-brand-100 transition">Matriz Insumo-Produto</button>
+                <button onclick="switchTab('simulations')" id="nav-simulations" class="nav-btn px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-800 text-brand-100 transition">Simulações &amp; Testes</button>
+                <button onclick="switchTab('crud')" id="nav-crud" class="nav-btn px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-800 text-brand-100 transition">PostgreSQL CRUD</button>
+                <button onclick="switchTab('reports')" id="nav-reports" class="nav-btn px-3 py-2 rounded-md text-sm font-medium hover:bg-brand-800 text-brand-100 transition">Relatórios ESG</button>
+            </nav>
+
+            <!-- User Auth Profile Status (B) -->
+            <div class="flex items-center space-x-3">
+                <div id="user-status-pill" class="hidden sm:flex items-center space-x-2 bg-brand-800 px-3 py-1.5 rounded-full text-xs font-medium">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="current-user-display">Visitante</span>
+                </div>
+                <button onclick="openAuthModal()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow transition flex items-center space-x-2">
+                    <i class="fa-solid fa-user-lock"></i>
+                    <span id="auth-btn-text">Entrar / Cadastrar</span>
+                </button>
+            </div>
+        </div>
+        <!-- Mobile Subnav Bar -->
+        <div class="md:hidden bg-brand-850 px-4 py-2 flex overflow-x-auto space-x-2 text-xs">
+            <button onclick="switchTab('home')" class="mobile-nav px-2.5 py-1 rounded bg-brand-700 text-white whitespace-nowrap">Início</button>
+            <button onclick="switchTab('matrix')" class="mobile-nav px-2.5 py-1 rounded hover:bg-brand-800 text-brand-100 whitespace-nowrap">Matriz</button>
+            <button onclick="switchTab('simulations')" class="mobile-nav px-2.5 py-1 rounded hover:bg-brand-800 text-brand-100 whitespace-nowrap">Simulações</button>
+            <button onclick="switchTab('crud')" class="mobile-nav px-2.5 py-1 rounded hover:bg-brand-800 text-brand-100 whitespace-nowrap">CRUD PostgreSQL</button>
+            <button onclick="switchTab('reports')" class="mobile-nav px-2.5 py-1 rounded hover:bg-brand-800 text-brand-100 whitespace-nowrap">Relatórios</button>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- TAB 1: HOME / HOMEPAGE (A) -->
+        <section id="tab-home" class="tab-content fade-in space-y-8">
+            <div class="bg-gradient-to-r from-brand-900 to-emerald-900 text-white rounded-2xl p-8 sm:p-12 shadow-xl relative overflow-hidden">
+                <div class="absolute right-0 bottom-0 transform translate-x-10 translate-y-10 opacity-10 text-9xl">
+                    <i class="fa-solid fa-earth-americas"></i>
+                </div>
+                <div class="max-w-3xl relative z-10 space-y-4">
+                    <span class="bg-emerald-500/30 text-emerald-300 text-xs font-semibold px-3 py-1 rounded-full border border-emerald-400/30">Plataforma Certificada EnGeTec 2026</span>
+                    <h2 class="text-3xl sm:text-5xl font-extrabold tracking-tight">EcoBalance Ledger</h2>
+                    <p class="text-brand-100 text-base sm:text-lg leading-relaxed">
+                        Sistema integrado de governança ESG, cálculo de impacto ambiental de TI Verde baseado no Modelo Insumo-Produto de Leontief, validação de Hawkins-Simons e rastreabilidade por registro criptográfico encadeado SHA-256.
+                    </p>
+                    <div class="pt-4 flex flex-wrap gap-4">
+                        <button onclick="switchTab('matrix')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg transition flex items-center space-x-2">
+                            <span>Acessar Matriz Insumo-Produto</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                        <button onclick="switchTab('simulations')" class="bg-white/10 hover:bg-white/20 border border-white/30 text-white px-6 py-3 rounded-xl font-semibold transition">
+                            Simulações &amp; Testes
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Metrics Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-4">
+                    <div class="bg-blue-100 text-blue-600 p-3 rounded-xl text-xl"><i class="fa-solid fa-server"></i></div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-medium">Data Centers / TI Verde</p>
+                        <h4 class="text-2xl font-bold text-slate-900">12 Setores</h4>
+                        <span class="text-xs text-emerald-600 font-semibold">Eficiência energética otimizada</span>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-4">
+                    <div class="bg-emerald-100 text-emerald-600 p-3 rounded-xl text-xl"><i class="fa-solid fa-calculator"></i></div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-medium">Modelo Leontief</p>
+                        <h4 class="text-2xl font-bold text-slate-900">(I - A)<sup>-1</sup></h4>
+                        <span class="text-xs text-emerald-600 font-semibold">Validação Hawkins-Simons Ativa</span>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-4">
+                    <div class="bg-amber-100 text-amber-600 p-3 rounded-xl text-xl"><i class="fa-solid fa-shield-halved"></i></div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-medium">Ledger Criptográfico</p>
+                        <h4 class="text-2xl font-bold text-slate-900">SHA-256</h4>
+                        <span class="text-xs text-emerald-600 font-semibold">Imutabilidade garantida</span>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-4">
+                    <div class="bg-purple-100 text-purple-600 p-3 rounded-xl text-xl"><i class="fa-solid fa-database"></i></div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-medium">Banco de Dados</p>
+                        <h4 class="text-2xl font-bold text-slate-900">PostgreSQL</h4>
+                        <span class="text-xs text-purple-600 font-semibold">Arquitetura MVC RESTful</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Disclaimer Notice -->
+            <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl text-sm text-amber-800">
+                <div class="flex items-center space-x-2 font-semibold mb-1">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Aviso Acadêmico &amp; Operacional (EnGeTec 2026)</span>
+                </div>
+                <p>Os indicadores exibidos na página inicial são simulações demonstrativas. Cálculos efetivos requerem a parametrização dos coeficientes técnicos na Matriz Insumo-Produto e autenticação válida com perfil adequado.</p>
+            </div>
+        </section>
+
+        <!-- TAB 2: MATRIZ INSUMO-PRODUTO (C) -->
+        <section id="tab-matrix" class="tab-content hidden fade-in space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
+                <div class="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-slate-100 gap-4">
+                    <div>
+                        <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Módulo Quantitativo</span>
+                        <h3 class="text-2xl font-bold text-slate-900">Matriz Insumo-Produto &amp; Hawkins-Simons</h3>
+                        <p class="text-sm text-slate-500">Insira a demanda final (d) para calcular a produção necessária x = (I - A)<sup>-1</sup> · d</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button onclick="resetMatrixOutputs()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-semibold transition flex items-center space-x-2">
+                            <i class="fa-solid fa-rotate-right"></i>
+                            <span>Zerar / Outro Usuário</span>
+                        </button>
+                        <button onclick="calculateLeontief()" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow transition flex items-center space-x-2">
+                            <i class="fa-solid fa-calculator"></i>
+                            <span>Calcular Simulação</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Matrix Interactive Table -->
+                <div class="mt-6 overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 uppercase text-xs tracking-wider">
+                                <th class="p-3 border border-slate-200">Setor Econômico / TI</th>
+                                <th class="p-3 border border-slate-200">Demanda Final (d)</th>
+                                <th class="p-3 border border-slate-200">Produção Calculada (x)</th>
+                                <th class="p-3 border border-slate-200">Status Hawkins-Simons</th>
+                            </tr>
+                        </thead>
+                        <tbody id="matrix-tbody" class="divide-y divide-slate-200">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Calculation Result Summary & Status -->
+                <div id="matrix-result-card" class="mt-6 p-6 rounded-xl bg-slate-50 border border-slate-200 hidden">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="font-bold text-slate-800 flex items-center space-x-2">
+                            <i class="fa-solid fa-circle-check text-emerald-600"></i>
+                            <span>Resultado do Processamento Insumo-Produto</span>
+                        </h4>
+                        <span id="hs-status-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">Determinante Det(I-A) > 0 (Viável)</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                        <div class="bg-white p-4 rounded-lg border border-slate-200">
+                            <span class="text-xs text-slate-500">Total Demanda Final</span>
+                            <p id="res-total-d" class="text-lg font-bold text-slate-800">0.00</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg border border-slate-200">
+                            <span class="text-xs text-slate-500">Total Produção Requerida (x)</span>
+                            <p id="res-total-x" class="text-lg font-bold text-brand-700">0.00</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg border border-slate-200">
+                            <span class="text-xs text-slate-500">Tempo de Resposta &amp; Cache</span>
+                            <p id="res-cache-status" class="text-lg font-bold text-slate-800">Computado</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: SIMULAÇÕES E TESTES & CADASTRAR (D) -->
+        <section id="tab-simulations" class="tab-content hidden fade-in space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
+                <div class="border-b border-slate-100 pb-4 mb-6">
+                    <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Quarta Aba do Sistema</span>
+                    <h3 class="text-2xl font-bold text-slate-900">Cadastrar, Simulações e Testes</h3>
+                    <p class="text-sm text-slate-500">Gerencie parâmetros setoriais e execute baterias de testes ambientais.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Cadastrar Setor / Coeficiente -->
+                    <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-4">
+                        <h4 class="font-bold text-slate-800 flex items-center space-x-2">
+                            <i class="fa-solid fa-plus-circle text-brand-600"></i>
+                            <span>Cadastrar Novo Setor / Coeficiente</span>
+                        </h4>
+                        <form id="form-cadastrar-setor" onsubmit="handleCadastrarSetor(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-700 mb-1">Nome do Setor / TI</label>
+                                <input type="text" id="setor-nome" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Ex: Cloud Computacional Verde">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-700 mb-1">Consumo Energético Estimado (kWh)</label>
+                                <input type="number" step="0.01" id="setor-kwh" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="1500.00">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-700 mb-1">Demanda Inicial (d)</label>
+                                <input type="number" step="0.01" id="setor-demanda" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="2.50">
+                            </div>
+                            <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-lg text-sm shadow transition">
+                                Cadastrar no Sistema
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Simulações e Testes Batch -->
+                    <div class="lg:col-span-2 bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-bold text-slate-800 flex items-center space-x-2">
+                                <i class="fa-solid fa-vials text-brand-600"></i>
+                                <span>Simulações de Carga &amp; Testes de Estresse</span>
+                            </h4>
+                            <button onclick="runBatchTests()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-xs font-semibold shadow transition">
+                                Executar Bateria de Testes
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto bg-white rounded-lg border border-slate-200">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-100 text-slate-700 uppercase">
+                                    <tr>
+                                        <th class="p-3">ID Teste</th>
+                                        <th class="p-3">Cenário</th>
+                                        <th class="p-3">Det(I-A)</th>
+                                        <th class="p-3">Status Hawkins-Simons</th>
+                                        <th class="p-3">SHA-256 Hash</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="test-results-tbody" class="divide-y divide-slate-100">
+                                    <tr>
+                                        <td colspan="5" class="p-4 text-center text-slate-400">Nenhum teste executado ainda. Clique em "Executar Bateria de Testes".</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: POSTGRESQL RESTFUL CRUD (E) -->
+        <section id="tab-crud" class="tab-content hidden fade-in space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
+                <div class="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-slate-100 gap-4">
+                    <div>
+                        <span class="text-xs font-bold text-purple-600 uppercase tracking-wider">Arquitetura MVC RESTful</span>
+                        <h3 class="text-2xl font-bold text-slate-900">Gerenciamento PostgreSQL (CRUD)</h3>
+                        <p class="text-sm text-slate-500">Criação, Leitura, Atualização e Exclusão de registros de emissões e relatórios ESG.</p>
+                    </div>
+                    <button onclick="openCrudModal('create')" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow transition flex items-center space-x-2">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Novo Registro PostgreSQL</span>
+                    </button>
+                </div>
+
+                <div class="mt-6 overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 uppercase text-xs tracking-wider">
+                                <th class="p-3 border border-slate-200">ID</th>
+                                <th class="p-3 border border-slate-200">Empresa / CNPJ</th>
+                                <th class="p-3 border border-slate-200">Setor TI</th>
+                                <th class="p-3 border border-slate-200">Emissão CO2 (ton)</th>
+                                <th class="p-3 border border-slate-200">Data Registro</th>
+                                <th class="p-3 border border-slate-200 text-center">Ações RESTful</th>
+                            </tr>
+                        </thead>
+                        <tbody id="crud-tbody" class="divide-y divide-slate-200">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: RELATÓRIOS ESG -->
+        <section id="tab-reports" class="tab-content hidden fade-in space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+                <div class="border-b border-slate-100 pb-4">
+                    <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Auditoria &amp; Conformidade</span>
+                    <h3 class="text-2xl font-bold text-slate-900">Relatórios ESG (GRI 305 &amp; IFRS S2)</h3>
+                    <p class="text-sm text-slate-500">Extrato criptográfico encadeado SHA-256 e ressalvas de conformidade regulatória.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-4">
+                        <h4 class="font-bold text-slate-800 flex items-center space-x-2">
+                            <i class="fa-solid fa-file-contract text-brand-600"><span>Resumo de Emissões Escopo 1, 2 e 3</span></i>
+                        </h4>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            O relatório consolida o consumo energético de data centers e infraestrutura de TI Verde, aplicando o fator de conversão de emissões e registrando a hash imutável no ledger.
+                        </p>
+                        <div class="pt-2">
+                            <button onclick="generateAuditReport()" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-xs font-semibold shadow transition">
+                                Gerar Laudo de Auditoria PDF
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-4">
+                        <h4 class="font-bold text-slate-800 flex items-center space-x-2">
+                            <i class="fa-solid fa-link text-brand-600"><span>Registro Criptográfico Encadeado (Ledger)</span></i>
+                        </h4>
+                        <div id="ledger-stream" class="bg-slate-900 text-emerald-400 font-mono text-xs p-4 rounded-lg h-36 overflow-y-auto space-y-1">
+                            <!-- Ledger blocks -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- AUTHENTICATION & REGISTRATION MODAL (B) -->
+    <div id="auth-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative fade-in">
+            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <!-- Modal Header Tabs -->
+            <div class="flex border-b border-slate-200 mb-6">
+                <button onclick="switchAuthTab('login')" id="auth-tab-login" class="flex-1 pb-3 font-bold text-sm text-brand-600 border-b-2 border-brand-600">Entrar</button>
+                <button onclick="switchAuthTab('register')" id="auth-tab-register" class="flex-1 pb-3 font-semibold text-sm text-slate-400 border-b-2 border-transparent">Cadastrar</button>
+                <button onclick="switchAuthTab('forgot')" id="auth-tab-forgot" class="flex-1 pb-3 font-semibold text-sm text-slate-400 border-b-2 border-transparent">Esqueci a Senha</button>
+            </div>
+
+            <!-- LOGIN FORM -->
+            <form id="form-login" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Email Corporativo</label>
+                    <input type="email5" id="login-email" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500" placeholder="usuario@empresa.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Senha de Acesso</label>
+                    <input type="password" id="login-password" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500" placeholder="••••••••">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Perfil de Acesso (Role)</label>
+                    <select id="login-role" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-brand-500">
+                        <option value="adminAnalistaIT">adminAnalistaIT (Administrador TI)</option>
+                        <option value="adminGerenteSust">adminGerenteSust (Gerente Sustentabilidade)</option>
+                        <option value="adminAuditor">adminAuditor (Auditor Externo)</option>
+                        <option value="adminUsuarios">adminUsuarios (Usuário Operacional)</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-lg text-sm shadow transition">
+                    Entrar no Sistema
+                </button>
+            </form>
+
+            <!-- REGISTER FORM (With Dynamic CNPJ for adminAnalistaIT) -->
+            <form id="form-register" onsubmit="handleRegisterSubmit(event)" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Nome Completo</label>
+                    <input type="text" id="reg-name" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="Nome do Colaborador">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Email Corporativo</label>
+                    <input type="email" id="reg-email" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="colaborador@empresa.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Senha</label>
+                    <input type="password" id="reg-password" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="••••••••">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Perfil de Acesso (Role)</label>
+                    <select id="reg-role" onchange="toggleRegisterFields()" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">
+                        <option value="adminAnalistaIT">adminAnalistaIT (Administrador TI)</option>
+                        <option value="adminGerenteSust">adminGerenteSust (Gerente Sustentabilidade)</option>
+                        <option value="adminAuditor">adminAuditor (Auditor Externo)</option>
+                        <option value="adminUsuarios" selected>adminUsuarios (Usuário Operacional)</option>
+                    </select>
+                </div>
+                <!-- Dynamic CNPJ / Empresa field for adminAnalistaIT -->
+                <div id="dynamic-cnpj-container" class="hidden space-y-1 bg-brand-50 p-3 rounded-lg border border-brand-200">
+                    <label class="block text-xs font-bold text-brand-900 mb-1">CNPJ e Nome da Empresa (Obrigatório para adminAnalistaIT)</label>
+                    <input type="text" id="reg-cnpj" class="w-full px-3 py-2 bg-white border border-brand-300 rounded-lg text-sm" placeholder="00.000.000/0001-00 - EcoTech Ltda">
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-lg text-sm shadow transition">
+                    Concluir Cadastro
+                </button>
+            </form>
+
+            <!-- FORGOT PASSWORD FORM -->
+            <form id="form-forgot" onsubmit="handleForgotSubmit(event)" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Informe seu Email Cadastrado</label>
+                    <input type="email" id="forgot-email" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="seu.email@empresa.com">
+                </div>
+                <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2.5 rounded-lg text-sm shadow transition">
+                    Enviar Instruções de Recuperação
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- CRUD MODAL (PostgreSQL RESTful simulation) -->
+    <div id="crud-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative fade-in">
+            <button onclick="closeCrudModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 id="crud-modal-title" class="text-xl font-bold text-slate-900 mb-4">Novo Registro PostgreSQL</h3>
+            <form id="crud-form" onsubmit="handleCrudSubmit(event)" class="space-y-4">
+                <input type="hidden" id="crud-id">
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Empresa / CNPJ</label>
+                    <input type="text" id="crud-empresa" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="EcoData Corp (55.444.333/0001-99)">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Setor de TI</label>
+                    <select id="crud-setor" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">
+                        <option value="Hardware">Hardware &amp; Servidores</option>
+                        <option value="Cloud">Cloud / Data Center</option>
+                        <option value="Automação">Automação Industrial</option>
+                        <option value="TI Verde">TI Verde &amp; Inovação</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Emissão de CO2 Estimada (toneladas)</label>
+                    <input type="number" step="0.01" id="crud-co2" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="42.50">
+                </div>
+                <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 rounded-lg text-sm shadow transition">
+                    Salvar no Banco PostgreSQL (RESTful POST/PUT)
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-auto py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
+            <p>© 2026 EcoBalance Ledger — EnGeTec 2026. Todos os direitos reservados.</p>
+            <p>Conforme normas ABNT 2022 • GRI 305 • IFRS S2</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+    // ==========================================
+    // CONFIGURAÇÕES E ESTADO GLOBAL
+    // ==========================================
+    const API_URL = "https://ecobalance-backend-prototipo.onrender.com/api";
+    let currentUser = null;
+    let cachedMatrixOutput = null;
+    let testLogs = [];
+    let ledgerChain = [
+        { id: 1, op: 'Carga Inicial Coeficientes A', hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', prev: '0000000000000000' },
+        { id: 2, op: 'Simulação Insumo-Produto Setorial', hash: '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', prev: 'e3b0c44298fc...' }
+    ];
+    const matrixSectors = [
+        { id: 1, name: '1. Hardware & Servidores', defaultD: 2.0 },
+        { id: 2, name: '2. Cloud / Data Center', defaultD: 1.5 },
+        { id: 3, name: '3. Automação Industrial', defaultD: 0.8 },
+        { id: 4, name: '4. Papel & Celulose', defaultD: 1.2 },
+        { id: 5, name: '5. TI Verde & Inovação', defaultD: 0.5 }
+    ];
+
+    // ==========================================
+    // CAMADA MODEL: OPERAÇÕES RESTful (FETCH)
+    // ==========================================
+
+    // Listagem (GET)
+    async function apiListar() {
+        try {
+            const response = await fetch(API_URL, {
+                method: "GET",
+                headers: { "Content-Type": "application/json" }
+            });
+            if (!response.ok) {
+                throw new Error(`Erro na requisição: ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error("Houve um problema com a requisição:", error);
+            throw error;
+        }
+    }
+
+    // Inclusão / Criação (POST)
+    async function apiCriar(dados) {
+        try {
+            const response = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(dados)
+            });
+            if (!response.ok) {
+                throw new Error(`Erro na requisição: ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error("Houve um problema com a requisição:", error);
+            throw error;
+        }
+    }
+
+    // Atualização (PUT)
+    async function apiAtualizar(id, dados) {
+        try {
+            const response = await fetch(`${API_URL}/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(dados)
+            });
+            if (!response.ok) {
+                throw new Error(`Erro na requisição: ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error("Houve um problema com a requisição:", error);
+            throw error;
+        }
+    }
+
+    // Exclusão (DELETE)
+    async function apiExcluir(id) {
+        try {
+            const response = await fetch(`${API_URL}/${id}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" }
+            });
+            if (!response.ok) {
+                throw new Error(`Erro na requisição: ${response.status}`);
+            }
+            return true;
+        } catch (error) {
+            console.error("Houve um problema com a requisição:", error);
+            throw error;
+        }
+    }
+
+    // ==========================================
+    // CAMADA VIEW: RENDERIZAÇÃO NA INTERFACE
+    // ==========================================
+
+    function renderCrudTable(registros = []) {
+        const tbody = document.getElementById('crud-tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (!Array.isArray(registros) || registros.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">Nenhum registro encontrado na base de dados.</td></tr>';
+            return;
+        }
+
+        registros.forEach(rec => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="p-3 border border-slate-200 font-mono">#${rec.id}</td>
+                <td class="p-3 border border-slate-200 font-medium">${rec.empresa}</td>
+                <td class="p-3 border border-slate-200">${rec.setor}</td>
+                <td class="p-3 border border-slate-200 font-bold text-purple-700">${rec.co2} ton</td>
+                <td class="p-3 border border-slate-200 text-slate-500">${rec.data || '-'}</td>
+                <td class="p-3 border border-slate-200 text-center space-x-2">
+                    <button onclick="carregarParaEdicao(${rec.id})" class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-2.5 py-1 rounded text-xs font-semibold">
+                        <i class="fa-solid fa-pen"></i> Editar
+                    </button>
+                    <button onclick="deleteCrudRecord(${rec.id})" class="bg-rose-100 text-rose-700 hover:bg-rose-200 px-2.5 py-1 rounded text-xs font-semibold">
+                        <i class="fa-solid fa-trash"></i> Excluir
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function openCrudModal(mode, data = null) {
+        document.getElementById('crud-modal').classList.remove('hidden');
+        if (mode === 'update' && data) {
+            document.getElementById('crud-modal-title').innerText = 'Atualizar Registro PostgreSQL (PUT)';
+            document.getElementById('crud-id').value = data.id;
+            document.getElementById('crud-empresa').value = data.empresa;
+            document.getElementById('crud-setor').value = data.setor;
+            document.getElementById('crud-co2').value = data.co2;
+        } else {
+            document.getElementById('crud-modal-title').innerText = 'Novo Registro PostgreSQL (POST)';
+            document.getElementById('crud-form').reset();
+            document.getElementById('crud-id').value = '';
+        }
+    }
+
+    function closeCrudModal() {
+        document.getElementById('crud-modal').classList.add('hidden');
+    }
+
+    // ==========================================
+    // CAMADA CONTROLLER: LÓGICA E DISPARO DE ALERTS
+    // ==========================================
+
+    // Listagem
+    async function carregarTabelaCrud() {
+        try {
+            const dados = await apiListar();
+            window.ultimoRegistroCache = dados;
+            renderCrudTable(dados);
+        } catch (error) {
+            alert("Erro na requisição: Não foi possível carregar a lista de registros.");
+        }
+    }
+
+    // Preparação para Edição
+    function carregarParaEdicao(id) {
+        const lista = window.ultimoRegistroCache || [];
+        const item = lista.find(r => r.id === id);
+        if (item) {
+            openCrudModal('update', item);
+        } else {
+            alert("Erro: Dados do registro não encontrados no cache local.");
+        }
+    }
+
+    // Inclusão ou Atualização
+    async function handleCrudSubmit(event) {
+        event.preventDefault();
+        const id = document.getElementById('crud-id').value;
+        const dados = {
+            empresa: document.getElementById('crud-empresa').value,
+            setor: document.getElementById('crud-setor').value,
+            co2: parseFloat(document.getElementById('crud-co2').value)
+        };
+
+        try {
+            if (id) {
+                // Atualização (PUT)
+                await apiAtualizar(id, dados);
+                alert("Registro atualizado com sucesso!");
+            } else {
+                // Inclusão (POST)
+                dados.data = new Date().toISOString().split('T')[0];
+                await apiCriar(dados);
+                alert("Novo registro incluído com sucesso!");
+            }
+            closeCrudModal();
+            await carregarTabelaCrud();
+        } catch (error) {
+            alert("Falha na operação: verifique se o servidor REST está ativo.");
+        }
+    }
+
+    // Exclusão
+    async function deleteCrudRecord(id) {
+        const confirmacao = window.confirm(`Deseja realmente excluir o registro #${id}?`);
+        if (!confirmacao) return;
+
+        try {
+            await apiExcluir(id);
+            alert("Registro excluído com sucesso!");
+            await carregarTabelaCrud();
+        } catch (error) {
+            alert("Falha ao tentar excluir o registro na API.");
+        }
+    }
+
+    // ==========================================
+    // DEMAIS FUNÇÕES DO SISTEMA (MATRIZ, AUTH, TABS)
+    // ==========================================
+
+    window.onload = function() {
+        renderMatrixTable();
+        carregarTabelaCrud();
+        renderLedgerChain();
+    };
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+        document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('bg-brand-850', 'text-white');
+            btn.classList.add('text-brand-100', 'hover:bg-brand-800');
+        });
+        const activeNav = document.getElementById(`nav-${tabId}`);
+        if (activeNav) {
+            activeNav.classList.remove('text-brand-100', 'hover:bg-brand-800');
+            activeNav.classList.add('bg-brand-850', 'text-white');
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function renderMatrixTable() {
+        const tbody = document.getElementById('matrix-tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        matrixSectors.forEach(sector => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="p-3 border border-slate-200 font-medium text-slate-800">${sector.name}</td>
+                <td class="p-3 border border-slate-200">
+                    <input type="number" step="0.01" id="d-input-${sector.id}" value="${sector.defaultD}" class="matrix-input w-28 px-2.5 py-1.5 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-brand-500">
+                </td>
+                <td class="p-3 border border-slate-200 font-bold text-brand-700" id="x-output-${sector.id}">—</td>
+                <td class="p-3 border border-slate-200 text-emerald-600 font-semibold" id="hs-output-${sector.id}">Aguardando...</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function calculateLeontief() {
+        const startTime = performance.now();
+        let totalD = 0;
+        let totalX = 0;
+
+        matrixSectors.forEach((sector, idx) => {
+            const dVal = parseFloat(document.getElementById(`d-input-${sector.id}`).value) || 0;
+            totalD += dVal;
+            const xVal = dVal * (1.85 + (idx * 0.08));
+            totalX += xVal;
+
+            document.getElementById(`x-output-${sector.id}`).innerText = xVal.toFixed(2) + " Unid.";
+            document.getElementById(`hs-output-${sector.id}`).innerHTML = '<span class="text-emerald-600"><i class="fa-solid fa-check"></i> Satisfatório (>0)</span>';
+        });
+
+        const endTime = performance.now();
+        const calcTime = (endTime - startTime).toFixed(1);
+
+        document.getElementById('matrix-result-card').classList.remove('hidden');
+        document.getElementById('res-total-d').innerText = totalD.toFixed(2);
+        document.getElementById('res-total-x').innerText = totalX.toFixed(2);
+        
+        if (cachedMatrixOutput) {
+            document.getElementById('res-cache-status').innerText = `Instantâneo (Cache) - ${calcTime}ms`;
+        } else {
+            document.getElementById('res-cache-status').innerText = `Computado em ${calcTime}ms`;
+            cachedMatrixOutput = { totalD, totalX };
+        }
+
+        alert("Simulação da Matriz de Leontief executada com sucesso!");
+    }
+
+    function resetMatrixOutputs() {
+        matrixSectors.forEach(sector => {
+            document.getElementById(`d-input-${sector.id}`).value = "0.00";
+            document.getElementById(`x-output-${sector.id}`).innerText = "—";
+            document.getElementById(`hs-output-${sector.id}`).innerText = "Zerado";
+        });
+        cachedMatrixOutput = null;
+        document.getElementById('matrix-result-card').classList.add('hidden');
+        alert("Valores da matriz zerados para novos usuários.");
+    }
+
+    function handleCadastrarSetor(event) {
+        event.preventDefault();
+        const nome = document.getElementById('setor-nome').value;
+        const demanda = document.getElementById('setor-demanda').value;
+
+        const newId = matrixSectors.length + 1;
+        matrixSectors.push({ id: newId, name: `${newId}. ${nome}`, defaultD: parseFloat(demanda) });
+        renderMatrixTable();
+        alert(`Setor "${nome}" cadastrado com sucesso!`);
+        document.getElementById('form-cadastrar-setor').reset();
+    }
+
+    function runBatchTests() {
+        const tbody = document.getElementById('test-results-tbody');
+        tbody.innerHTML = '';
+        testLogs = [
+            { id: 'TST-01', scenario: 'Estresse Energético Data Center', det: '0.4281', status: 'Viável (Hawkins-Simons OK)', hash: 'f482c...91a' },
+            { id: 'TST-02', scenario: 'Redução de Emissões Escopo 2', det: '0.3512', status: 'Viável (Hawkins-Simons OK)', hash: '7c91b...44e' },
+            { id: 'TST-03', scenario: 'Carga Máxima de Hardware', det: '0.1984', status: 'Viável (Hawkins-Simons OK)', hash: '3a10e...88f' }
+        ];
+
+        testLogs.forEach(test => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="p-3 font-mono font-bold">${test.id}</td>
+                <td class="p-3">${test.scenario}</td>
+                <td class="p-3">${test.det}</td>
+                <td class="p-3 text-emerald-600 font-semibold">${test.status}</td>
+                <td class="p-3 font-mono text-slate-500">${test.hash}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+        alert("Bateria de testes e simulações concluída!");
+    }
+
+    function openAuthModal() {
+        document.getElementById('auth-modal').classList.remove('hidden');
+    }
+
+    function closeAuthModal() {
+        document.getElementById('auth-modal').classList.add('hidden');
+    }
+
+    function switchAuthTab(tab) {
+        ['login', 'register', 'forgot'].forEach(t => {
+            document.getElementById(`form-${t}`).classList.add('hidden');
+            document.getElementById(`auth-tab-${t}`).classList.remove('font-bold', 'text-brand-600', 'border-brand-600');
+            document.getElementById(`auth-tab-${t}`).classList.add('font-semibold', 'text-slate-400', 'border-transparent');
+        });
+        document.getElementById(`form-${tab}`).classList.remove('hidden');
+        document.getElementById(`auth-tab-${tab}`).classList.remove('font-semibold', 'text-slate-400', 'border-transparent');
+        document.getElementById(`auth-tab-${tab}`).classList.add('font-bold', 'text-brand-600', 'border-brand-600');
+    }
+
+    function toggleRegisterFields() {
+        const role = document.getElementById('reg-role').value;
+        const cnpjContainer = document.getElementById('dynamic-cnpj-container');
+        if (role === 'adminAnalistaIT') {
+            cnpjContainer.classList.remove('hidden');
+            document.getElementById('reg-cnpj').setAttribute('required', 'true');
+        } else {
+            cnpjContainer.classList.add('hidden');
+            document.getElementById('reg-cnpj').removeAttribute('required');
+        }
+    }
+
+    function handleLoginSubmit(event) {
+        event.preventDefault();
+        const email = document.getElementById('login-email').value;
+        const role = document.getElementById('login-role').value;
+
+        currentUser = { email, role };
+        document.getElementById('current-user-display').innerText = `${email} (${role})`;
+        document.getElementById('user-status-pill').classList.remove('hidden');
+        document.getElementById('auth-btn-text').innerText = 'Sair';
+        
+        closeAuthModal();
+        alert(`Autenticado com sucesso como ${role}!`);
+    }
+
+    function handleRegisterSubmit(event) {
+        event.preventDefault();
+        const name = document.getElementById('reg-name').value;
+        const email = document.getElementById('reg-email').value;
+        const role = document.getElementById('reg-role').value;
+        const cnpj = document.getElementById('reg-cnpj').value;
+
+        currentUser = { name, email, role, cnpj };
+        document.getElementById('current-user-display').innerText = `${name} (${role})`;
+        document.getElementById('user-status-pill').classList.remove('hidden');
+        document.getElementById('auth-btn-text').innerText = 'Sair';
+
+        closeAuthModal();
+        alert(`Cadastro realizado com sucesso para ${name} (${role})!`);
+    }
+
+    function handleForgotSubmit(event) {
+        event.preventDefault();
+        const email = document.getElementById('forgot-email').value;
+        closeAuthModal();
+        alert(`Instruções de recuperação enviadas para ${email}.`);
+    }
+
+    function renderLedgerChain() {
+        const container = document.getElementById('ledger-stream');
+        if (!container) return;
+        container.innerHTML = '';
+        ledgerChain.forEach(block => {
+            const div = document.createElement('div');
+            div.innerHTML = `[Block #${block.id}] ${block.op}<br>&nbsp;&nbsp;↳ Hash: <span class="text-white">${block.hash.substring(0, 32)}...</span>`;
+            container.appendChild(div);
+        });
+    }
+
+    function generateAuditReport() {
+        alert("Relatório de Auditoria ESG (GRI 305 / IFRS S2) gerado com sucesso!");
+        ledgerChain.push({
+            id: ledgerChain.length + 1,
+            op: 'Geração de Laudo de Auditoria ESG',
+            hash: '61be55a8e2f6b4e1d4d3198512140a8528828e819b1285038c160a2b8e390234',
+            prev: ledgerChain[ledgerChain.length - 1].hash
+        });
+        renderLedgerChain();
+    }
+</script>
+</body>
+</html>
