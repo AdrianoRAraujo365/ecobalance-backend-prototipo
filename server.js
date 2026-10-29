@@ -1,4 +1,5 @@
 require('dotenv').config();
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -9,6 +10,58 @@ const app = express();
 const PORTA = process.env.PORT || 3000;
 
 // ---------- Configuração Robusta de CORS ----------
+
+
+const allowedOrigins = (process.env.APP_ORIGIN || '')
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean);
+
+const allowNullOrigin =
+  process.env.ALLOW_NULL_ORIGIN === 'true';
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Permite chamadas sem cabeçalho Origin.
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    // Permite as origens cadastradas no APP_ORIGIN.
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // Permissão opcional para testes locais com file://.
+    if (origin === 'null' && allowNullOrigin) {
+      return callback(null, true);
+    }
+
+    console.warn(`Origem CORS não autorizada: ${origin}`);
+
+    return callback(
+      new Error(
+        `Bloqueado por CORS: origem ${origin} não autorizada.`
+      )
+    );
+  },
+  methods: [
+    'GET',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+    'OPTIONS'
+  ],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization'
+  ]
+};
+
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '2mb' }));
+
 // Suporta múltiplas origens separadas por vírgula em APP_ORIGIN
 const origensPermitidas = process.env.APP_ORIGIN
   ? process.env.APP_ORIGIN.split(',').map((origem) => origem.trim())
